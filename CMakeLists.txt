@@ -75,29 +75,27 @@ if (FUZZTEST_BUILD_TESTING)
 endif ()
 
 # ---------------------------------------------------------------------------
-# FuzzTest installation and CMake package config for find_package support
+# Place the install/export/config block HERE, after all add_subdirectory calls!
 # ---------------------------------------------------------------------------
 include(GNUInstallDirs)
 
-# List all top-level public targets you want to export (add/remove as needed)
-set(FUZZTEST_EXPORT_TARGETS
-    fuzztest
-    fuzztest_core
-    fuzztest_gtest_main
-    fuzztest_macros
-    googletest_fixture_adapter
-    init_fuzztest
-    llvm_fuzzer_main
-    llvm_fuzzer_wrapper
-)
+# Only install targets that actually exist
+set(FUZZTEST_EXPORT_TARGETS)
+foreach(target IN ITEMS fuzztest fuzztest_core fuzztest_gtest_main fuzztest_macros googletest_fixture_adapter init_fuzztest llvm_fuzzer_main llvm_fuzzer_wrapper)
+    if(TARGET ${target})
+        list(APPEND FUZZTEST_EXPORT_TARGETS ${target})
+    endif()
+endforeach()
 
-install(TARGETS ${FUZZTEST_EXPORT_TARGETS}
-    EXPORT FuzzTestTargets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+if(FUZZTEST_EXPORT_TARGETS)
+    install(TARGETS ${FUZZTEST_EXPORT_TARGETS}
+        EXPORT FuzzTestTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif()
 
 install(DIRECTORY fuzztest/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fuzztest
@@ -116,6 +114,18 @@ install(EXPORT FuzzTestTargets
     NAMESPACE fuzztest::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FuzzTest
 )
+
+get_property(all_targets GLOBAL PROPERTY TARGETS)
+message(STATUS "All CMake targets: ${all_targets}")
+
+# Debug: Check which expected targets exist
+foreach(target IN ITEMS fuzztest fuzztest_core fuzztest_gtest_main fuzztest_macros googletest_fixture_adapter init_fuzztest llvm_fuzzer_main llvm_fuzzer_wrapper)
+    if(TARGET ${target})
+        message(STATUS "Target ${target} EXISTS")
+    else()
+        message(STATUS "Target ${target} MISSING")
+    endif()
+endforeach()
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/FuzzTestConfig.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FuzzTest
