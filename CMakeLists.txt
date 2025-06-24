@@ -68,6 +68,53 @@ add_subdirectory(grammar_codegen)
 add_subdirectory(grammar_codegen/generated_antlr_parser)
 add_subdirectory(tools)
 
+# --- FuzzTest installation and config file generation for find_package support ---
+
+include(GNUInstallDirs)
+
+# List all top-level public targets you want to export (add or remove as needed)
+set(FUZZTEST_EXPORT_TARGETS
+    fuzztest
+    fuzztest_core
+    fuzztest_gtest_main
+    fuzztest_macros
+    googletest_fixture_adapter
+    init_fuzztest
+    llvm_fuzzer_main
+    llvm_fuzzer_wrapper
+)
+
+install(TARGETS ${FUZZTEST_EXPORT_TARGETS}
+    EXPORT FuzzTestTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Install all public headers (recursive from the fuzztest directory)
+install(DIRECTORY fuzztest/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fuzztest
+    FILES_MATCHING PATTERN "*.h"
+)
+
+# Generate and install the CMake package config files
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FuzzTestConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/FuzzTestConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FuzzTest
+)
+
+install(EXPORT FuzzTestTargets
+    FILE FuzzTestTargets.cmake
+    NAMESPACE fuzztest::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FuzzTest
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/FuzzTestConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FuzzTest
+)
+
 if (FUZZTEST_BUILD_TESTING)
   add_subdirectory(domain_tests)
   add_subdirectory(e2e_tests)
